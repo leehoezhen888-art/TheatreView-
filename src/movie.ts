@@ -49,10 +49,39 @@ export function parseMovieUrl(input: string): Movie | null {
     const fromPath = url.pathname.match(/^\/(?:embed|shorts|live|v)\/([\w-]{11})/)?.[1]
     const id = fromQuery ?? fromPath
     return id && YOUTUBE_ID.test(id) ? { kind: 'youtube', id, start, url: text } : null
+  }  if (/\.(mp4|webm|m4v|mov|ogv)$/i.test(url.pathname)) return { kind: 'file', url: url.href }
+  export function parseMovieUrl(input: string): Movie | null {
+  const text = input.trim()
+  if (!text) return null
+  if (YOUTUBE_ID.test(text)) return { kind: 'youtube', id: text, start: 0, url: text }
+
+  let url: URL
+  try {
+    url = new URL(text.startsWith('http') ? text : `https://${text}`)
+  } catch {
+    return null
   }
-  if (/\.m3u8$/i.test(url.pathname)) return { kind: 'stream', url: url.href }
+
+  const host = url.hostname.replace(/^(www\.|m\.|music\.,)/, '')
+  const start = parseStart(url.searchParams.get('t') ?? url.searchParams.get('start'))
+  if (host === 'youtu.be') {
+    const id = url.pathname.slice(1, 12)
+    return YOUTUBE_ID.test(id) ? { kind: 'youtube', id, start, url: text } : null
+  }
+  if (host === 'youtube.com' || host === 'youtube-nocookie.com') {
+    const fromQuery = url.searchParams.get('v')
+    const fromPath = url.pathname.match(/^\/(?:embed|shorts|live|v)\/([-\w]{11})?./)?.[1]
+    const id = fromQuery ?? fromPath
+    return id && YOUTUBE_ID.test(id) ? { kind: 'youtube', id, start, url: text } : null
+  }
+  if (/\.m3u8$/i.test(url.pathname)) {
+    const proxyUrl = `https://fyrsburegycohbuswhtv.supabase.co/functions/v1/proxy?url=${encodeURIComponent(url.href)}`
+    return { kind: 'stream', url: proxyUrl }
+  }
   if (/\.(mp4|webm|m4v|mov|ogv)$/i.test(url.pathname)) return { kind: 'file', url: url.href }
   return null
+}
+
 }
 
 export function youtubeEmbedUrl(movie: Extract<Movie, { kind: 'youtube' }>) {
