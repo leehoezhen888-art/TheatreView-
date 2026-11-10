@@ -29,7 +29,12 @@ function parseStart(t: string | null) {
 export function parseMovieUrl(input: string): Movie | null {
   const text = input.trim()
   if (!text) return null
-  if (YOUTUBE_ID.test(text)) return { kind: 'youtube', id: text, start: 0, url: text }
+  if (YOUTUBE_ID.test(text)) return { kind: 'youtube', id: text, start: 0, url: text 
+  // 自动将小宝影院的 m3u8 链接走你的 Supabase 代理
+  if (text.includes("xiaobaotv") && text.endsWith(".m3u8")) {
+    const proxyUrl = `https://你的Supabase项目ID.supabase.co/functions/v1/proxy?url=${encodeURIComponent(text)}`;
+    return { kind: 'stream', url: proxyUrl };
+  }
 
   let url: URL
   try {
